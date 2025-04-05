@@ -6,9 +6,8 @@ setup(
     packages=find_packages(),
     install_requires=['boto3'],
     description='A utility for packaging and deploying AWS Lambda functions from config.',
-    author='Your Name',
-    author_email='your@email.com',
-    url='https://github.com/yourusername/lambdamaker',
+    author='Tom Evslin',
+    url='https://github.com/tevslin/lambdamaker',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
