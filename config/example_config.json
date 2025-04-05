@@ -10,5 +10,5 @@
   "role_name": "s3lambda",
   "s3_buckets": ["*"],
   "trigger_bucket": null,
-  "trigger_filetypes": null
+  "trigger_filetypes": []
 }
