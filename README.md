@@ -26,6 +26,16 @@ pip install lambdamaker
 
 ## 🔧 Configuration
 
+All routines look for `config.json`, `requirements.txt`, and `my.env` in the **current working directory** by default. You can override this by passing a `working_dir` parameter to any of the functions.
+
+### Common Parameters
+
+- `replace` (bool, default: `False`): If `True`, existing AWS resources such as the Lambda function, IAM role, or S3 triggers will be updated or replaced. If `False`, existing resources are left untouched.
+- `working_dir` (Path or str, optional): Specifies the directory where `config.json`, `requirements.txt`, and `my.env` are located. Defaults to the current working directory.
+
+
+All routines look for `config.json`, `requirements.txt`, and `my.env` in the **current working directory** by default. This can be overridden by passing a custom `working_dir` parameter to any of the functions.
+
 Use a `config.json` file in your working directory. Example:
 
 ```json
@@ -41,7 +51,7 @@ Use a `config.json` file in your working directory. Example:
   "role_name": "s3lambda",
   "s3_buckets": ["*"],
   "trigger_bucket": null,
-  "trigger_filetypes": null
+  "trigger_filetypes": []
 }
 ```
 
@@ -57,13 +67,6 @@ ENVIRONMENT=production
 Environment variables defined here will be injected into your Lambda runtime.
 
 ## ✅ Example Usage
-
-### About `replace`
-The `replace` parameter (default `False`) controls whether existing AWS resources (like the Lambda function or IAM role) should be updated if they already exist.
-- When `replace=False`, existing resources are left untouched.
-- When `replace=True`, the tool will overwrite existing configurations and Lambda code.
-
-Use `replace=True` cautiously in production environments.
 
 ```python
 from lambdamaker import (
@@ -111,5 +114,4 @@ MIT License
 ---
 
 Contributions and issue reports are welcome. PyPI publishing is coming soon!
-
 
