@@ -114,4 +114,3 @@ MIT License
 ---
 
 Contributions and issue reports are welcome. PyPI publishing is coming soon!
-
