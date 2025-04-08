@@ -1,6 +1,6 @@
 # LambdaMaker
 
-**LambdaMaker** is a simple, modular Python utility that automates the creation, packaging, configuration, and deployment of AWS Lambda functions using only standard Python and `boto3`.
+**LambdaMaker** is a simple, modular Python utility that automates the creation, packaging, configuration, and deployment of AWS Lambda functions, especially those processing and/or triggered from s3, using only standard Python and `boto3`.
 
 ## 🚀 Features
 
