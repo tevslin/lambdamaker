@@ -5,12 +5,41 @@ import tempfile
 import shutil
 import subprocess
 import time
+import sys
 from pathlib import Path
 import boto3
 
 def load_config(working_dir):
     with open(Path(working_dir) / "config.json") as f:
         return json.load(f)
+    
+def wait_for_docker():
+    try:
+        subprocess.check_output(["docker", "info"], stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.SubprocessError:
+        return False
+    
+def prompt_to_start_docker(timeout_seconds=120):
+    print("⚠️  Docker doesn't appear to be running.")
+    start_time = time.time()
+
+    while True:
+        if time.time() - start_time > timeout_seconds:
+            print("❌ Timeout: Docker did not become available within the expected time.")
+            sys.exit(1)
+
+        response = input("Please open Docker Desktop and type 'ok' when it's ready, or 'cancel' to abort: ").strip().lower()
+        if response == "cancel":
+            print("Aborting Lambda zip creation.")
+            sys.exit(1)
+        elif response == "ok":
+            if wait_for_docker():
+                print("✅ Docker is running. Continuing...")
+                return
+            else:
+                print("❌ Docker still not available. Try again or type 'cancel'.")
+
     
 def configure_s3_trigger(working_dir=Path.cwd(), replace=False):
     config = load_config(working_dir)
@@ -184,12 +213,29 @@ def create_lambda_zip(working_dir=Path.cwd(), mylib_dir=Path.home() / "mylib", r
             print(f"Copied library file '{file}' from mylib.")
         else:
             print(f"Warning: library file '{file}' not found in '{mylib_dir}'.")
-
+    
     if requirements_path.exists():
         print("Installing dependencies from requirements.txt...")
-        subprocess.check_call([
-            "pip", "install", "-r", str(requirements_path), "-t", str(temp_dir)
-        ])
+        if config.get("use_docker",False):
+           if not wait_for_docker():
+               prompt_to_start_docker()
+           subprocess.check_call([
+            "docker", "run", "--rm",
+            "-v", f"{working_dir}:/input",
+            "-v", f"{temp_dir}:/output",
+            f"public.ecr.aws/sam/build-python{config.get('python_version','3.12')}",
+            "/bin/sh", "-c",
+            "pip install --no-cache-dir -r /input/requirements.txt -t /output  "
+            ])
+           print("ℹ️  You may now close Docker Desktop if you're done using it.")
+
+           
+        else:
+            subprocess.check_call([
+                "pip", "install", "-r", str(requirements_path),
+                "--upgrade", "--force-reinstall", "-t", str(temp_dir)
+            ])
+
 
     with zipfile.ZipFile(zip_path, 'w') as zf:
         for file_path in temp_dir.rglob('*'):
@@ -251,6 +297,7 @@ def create_or_update_lambda(working_dir=Path.cwd(), mylib_dir=Path.home() / "myl
 
         lambda_client.update_function_configuration(
             FunctionName=lambda_name,
+            Runtime=f"python{config.get('python_version','3.12')}",
             Role=role_arn,
             Handler=entry_func,
             Timeout=config['timeout'],
@@ -272,7 +319,7 @@ def create_or_update_lambda(working_dir=Path.cwd(), mylib_dir=Path.home() / "myl
     except lambda_client.exceptions.ResourceNotFoundException:
         lambda_client.create_function(
             FunctionName=lambda_name,
-            Runtime='python3.11',
+            Runtime=f"python{config.get('python_version','3.12')}",
             Role=role_arn,
             Handler=entry_func,
             Code={'ZipFile': zip_path.read_bytes()},
@@ -291,4 +338,5 @@ def main(replace=False, working_dir=Path.cwd(), mylib_dir=Path.home() / "mylib")
     configure_s3_trigger(working_dir)
 
 if __name__ == '__main__':
-    main(working_dir=r"C:\Users\tevsl\goldendome\s3deepgrams3")
+    pass
+    #main(working_dir=r"C:\Users\tevsl\goldendome\s3deepgrams3")
